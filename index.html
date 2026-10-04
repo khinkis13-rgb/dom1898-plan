@@ -8,270 +8,593 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-/* Layout: one reading column 68ch, side notes collapse under it on phones; tables and cards full column width */
+/* Layout: sticky section nav, 1040px canvas, two-column "chart + takeaways" rows that stack on phones */
 :root{
-  --bg:#f5f4ee;        /* warm paper, slight green-grey bias */
-  --bg-2:#ebeae2;      /* panel */
-  --fg:#1d2622;        /* ink, green-black */
-  --fg-2:#5b655f;      /* secondary */
-  --line:#cfd3c9;
-  --accent:#2a6f6a;    /* pond teal */
-  --accent-soft:#d9e9e6;
-  --flag:#c4552e;      /* the bistro curtain: used only for red flags */
-  --flag-soft:#f3dfd5;
-  --ok:#3d7a4a;
-  --font-display:"Literata",Georgia,"Times New Roman",serif;
-  --font-body:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
+  --bg:#f5f4ee;--bg-2:#ebeae2;--bg-3:#e1e0d6;--fg:#1d2622;--fg-2:#5b655f;--line:#cfd3c9;
+  --accent:#2a6f6a;--accent-soft:#d9e9e6;--flag:#c4552e;--flag-soft:#f3dfd5;--ok:#3d7a4a;--ok-soft:#dcebdc;--warn:#b7852a;--warn-soft:#f2e7cf;
+  --c1:#2a6f6a;--c2:#c4552e;--c3:#7a8fb3;--c4:#b7852a;
+  --font-display:"Literata",Georgia,"Times New Roman",serif;--font-body:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
   color-scheme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#151b18;--bg-2:#1e2622;--fg:#e8e9e2;--fg-2:#a4ada6;--line:#33403a;
-    --accent:#6fb6ae;--accent-soft:#1f3532;--flag:#e8845e;--flag-soft:#3d2a22;--ok:#7fbf8b;color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#151b18;--bg-2:#1e2622;--fg:#e8e9e2;--fg-2:#a4ada6;--line:#33403a;
-  --accent:#6fb6ae;--accent-soft:#1f3532;--flag:#e8845e;--flag-soft:#3d2a22;--ok:#7fbf8b;color-scheme:dark;
-}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#151b18;--bg-2:#1e2622;--bg-3:#28322d;--fg:#e8e9e2;--fg-2:#a4ada6;--line:#33403a;--accent:#6fb6ae;--accent-soft:#1f3532;--flag:#e8845e;--flag-soft:#3d2a22;--ok:#7fbf8b;--ok-soft:#1f3326;--warn:#d8a650;--warn-soft:#3a3120;--c1:#6fb6ae;--c2:#e8845e;--c3:#8fa3c7;--c4:#d8a650;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151b18;--bg-2:#1e2622;--bg-3:#28322d;--fg:#e8e9e2;--fg-2:#a4ada6;--line:#33403a;--accent:#6fb6ae;--accent-soft:#1f3532;--flag:#e8845e;--flag-soft:#3d2a22;--ok:#7fbf8b;--ok-soft:#1f3326;--warn:#d8a650;--warn-soft:#3a3120;--c1:#6fb6ae;--c2:#e8845e;--c3:#8fa3c7;--c4:#d8a650;color-scheme:dark}
 *{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
 html,body{margin:0}
-body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:17px;line-height:1.55;padding-inline:20px;padding-block:0 48px;-webkit-font-smoothing:antialiased}
-.wrap{max-width:720px;margin:0 auto}
-header.top{padding-block:40px 24px;border-bottom:1px solid var(--line)}
-.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2);margin:0 0 14px}
-h1{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,5vw,42px);line-height:1.12;margin:0 0 16px;text-wrap:balance;letter-spacing:-.01em}
-.lead{font-size:20px;line-height:1.45;margin:0;color:var(--fg)}
-.meta{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:18px;font-size:14px;color:var(--fg-2)}
-h2{font-family:var(--font-display);font-weight:600;font-size:26px;line-height:1.2;margin:48px 0 14px;text-wrap:balance}
-h3{font-family:var(--font-body);font-weight:700;font-size:17px;margin:26px 0 8px}
-p{margin:0 0 14px}
-ul,ol{margin:0 0 14px;padding-left:22px}
-li{margin-bottom:6px}
-li::marker{color:var(--fg-2)}
-strong{font-weight:700}
-a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-.callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 18px;margin:20px 0;border-radius:0 6px 6px 0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:17px;line-height:1.5;padding-inline:20px;padding-block:0 48px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto}
+.narrow{max-width:720px}
+/* nav */
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);margin-inline:-20px;padding-inline:20px;border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-block:8px}
+nav.top .wrap::-webkit-scrollbar{display:none}
+nav.top a{flex:0 0 auto;font-size:14px;font-weight:600;color:var(--fg-2);text-decoration:none;padding:6px 12px;border-radius:999px;white-space:nowrap}
+nav.top a.on{background:var(--accent-soft);color:var(--accent)}
+/* type */
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,4.6vw,44px);line-height:1.1;margin:0 0 16px;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--font-display);font-weight:600;font-size:clamp(24px,3vw,30px);line-height:1.2;margin:0 0 6px;text-wrap:balance}
+h3{font-weight:700;font-size:17px;margin:0 0 8px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:22px}li{margin-bottom:6px}li::marker{color:var(--fg-2)}
+a{color:var(--accent);text-underline-offset:2px}
+.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2);margin:0 0 10px;font-weight:600}
+.sub{color:var(--fg-2);font-size:16px;margin:0 0 20px;max-width:720px}
+section{padding-block:44px 8px;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+header.hero{padding-block:44px 28px}
+.lead{font-size:20px;line-height:1.45;max-width:760px;margin:0 0 22px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--fg-2);margin-bottom:26px}
+/* stat tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--bg-2);border-radius:8px;padding:14px 16px;min-width:0}
+.tile b{display:block;font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.05;font-variant-numeric:tabular-nums;margin-bottom:6px}
+.tile.bad b{color:var(--flag)}.tile.good b{color:var(--ok)}
+.tile span{font-size:14px;color:var(--fg-2);line-height:1.3;display:block}
+/* two-col rows */
+.row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:start;margin-top:18px}
+@media (max-width:760px){.row{grid-template-columns:1fr}}
+.panel{background:var(--bg-2);border-radius:10px;padding:18px;min-width:0}
+.panel.plain{background:transparent;padding:0}
+.chart{position:relative;height:300px}
+.chart.tall{height:420px}
+.takeaways{display:flex;flex-direction:column;gap:12px}
+.take{border-left:3px solid var(--accent);padding:2px 0 2px 14px}
+.take.flag{border-color:var(--flag)}
+.take b{display:block;margin-bottom:2px}
+.take span{color:var(--fg-2);font-size:15px}
+.note{font-size:13px;color:var(--fg-2);margin-top:8px}
+/* channels */
+.channels{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:18px}
+details.ch{background:var(--bg-2);border-radius:8px;padding:0;min-width:0;border:1px solid transparent}
+details.ch[open]{border-color:var(--line)}
+details.ch summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px}
+details.ch summary::-webkit-details-marker{display:none}
+details.ch summary::after{content:"+";margin-left:auto;color:var(--fg-2);font-size:18px;line-height:1}
+details.ch[open] summary::after{content:"–"}
+.dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.dot.g{background:var(--ok)}.dot.y{background:var(--warn)}.dot.r{background:var(--flag)}
+.ch .name{font-weight:700;font-size:15px;line-height:1.2}
+.ch .st{font-size:12px;color:var(--fg-2);display:block;margin-top:2px}
+.ch .body{padding:0 14px 14px;font-size:15px;color:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--fg-2);margin-top:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+/* tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 14px}
+.tabs button{font:inherit;font-size:14px;font-weight:600;color:var(--fg-2);background:var(--bg-2);border:1px solid transparent;border-radius:999px;padding:7px 14px;cursor:pointer}
+.tabs button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabpanel{display:none}.tabpanel.on{display:block}
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:18px}
+.card{background:var(--bg-2);border-radius:10px;padding:16px 18px;min-width:0}
+.card .k{font-family:var(--font-display);font-size:30px;line-height:1;color:var(--accent);margin-bottom:10px;font-weight:600}
+.card h3{font-size:17px;margin-bottom:6px}
+.card p{font-size:15px;margin:0;color:var(--fg)}
+.card .more{font-size:14px;color:var(--fg-2);margin-top:8px;display:none}
+.card.open .more{display:block}
+.card button{font:inherit;font-size:13px;font-weight:600;color:var(--accent);background:none;border:0;padding:6px 0 0;cursor:pointer}
+.card .res{display:inline-block;margin-top:10px;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 9px;border-radius:999px}
+/* map */
+.map{width:100%;height:auto;display:block}
+.map text{font-family:var(--font-body)}
+/* contours */
+.contour ul{margin:0}
+.contour li{margin-bottom:8px}
+.contour .why{font-size:14px;color:var(--fg-2)}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:18px}
+@media (max-width:760px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.flow button{font:inherit;text-align:left;background:var(--bg-2);border:1px solid transparent;border-radius:8px;padding:12px;cursor:pointer;color:var(--fg);min-width:0}
+.flow button.on{border-color:var(--accent);background:var(--accent-soft)}
+.flow b{display:block;font-size:15px}
+.flow small{display:block;color:var(--fg-2);font-size:12px;margin-top:2px}
+/* calculator */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin-top:18px}
+@media (max-width:760px){.calc{grid-template-columns:1fr}}
+.calc label{display:block;font-size:14px;color:var(--fg-2);margin:14px 0 6px}
+.calc label b{color:var(--fg);font-size:17px;font-variant-numeric:tabular-nums;float:right}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.out div{background:var(--bg-2);border-radius:8px;padding:12px 14px}
+.out b{display:block;font-family:var(--font-display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.out span{font-size:13px;color:var(--fg-2)}
+.bar{height:10px;background:var(--bg-3);border-radius:999px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
+/* checklist */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.filters button{font:inherit;font-size:13px;font-weight:600;background:var(--bg-2);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer;color:var(--fg-2)}
+.filters button.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.todo{list-style:none;padding:0;margin:0}
+.todo li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.todo li.hide{display:none}
+.todo input{width:18px;height:18px;margin-top:3px;accent-color:var(--accent);flex:0 0 auto}
+.todo label{flex:1;cursor:pointer}
+.todo .who{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--bg-3);color:var(--fg-2);margin-right:8px;vertical-align:middle}
+.todo .who.vy{background:var(--flag-soft);color:var(--flag)}.todo .who.my{background:var(--accent-soft);color:var(--accent)}
+.todo li.done label{color:var(--fg-2);text-decoration:line-through}
+.progress{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--fg-2)}
+.progress .bar{flex:1;margin:0}
+/* metrics */
+.metrics{display:grid;gap:10px;margin-top:18px}
+.m{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr);gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.m .h{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-2);font-weight:700}
+.m .now{color:var(--fg-2)}
+.m .tg{font-weight:600}
+.m .bar{margin:0}
+@media (max-width:640px){.m{grid-template-columns:1fr 1fr;row-gap:4px}.m .bar{grid-column:1/-1}.m.head{display:none}}
+.callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 18px;margin:18px 0;border-radius:0 6px 6px 0}
+.callout.flag{background:var(--flag-soft);border-color:var(--flag)}
 .callout p:last-child{margin:0}
-.flag{background:var(--flag-soft);border-left:3px solid var(--flag)}
-.quote{font-family:var(--font-display);font-size:19px;line-height:1.4;font-style:italic;padding:4px 0 4px 18px;border-left:2px solid var(--line);margin:18px 0;color:var(--fg)}
-.quote small{display:block;font-family:var(--font-body);font-style:normal;font-size:14px;color:var(--fg-2);margin-top:6px}
-.tablewrap{overflow-x:auto;margin:16px 0 20px;border:1px solid var(--line);border-radius:6px}
+.quote{font-family:var(--font-display);font-size:21px;line-height:1.4;font-style:italic;padding:6px 0 6px 18px;border-left:2px solid var(--accent);margin:18px 0;max-width:760px}
+.quote small{display:block;font-family:var(--font-body);font-style:normal;font-size:14px;color:var(--fg-2);margin-top:8px}
+.tablewrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:8px}
 table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-weight:700;background:var(--bg-2);font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-2)}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-2);background:var(--bg-2)}
 tr:last-child td{border-bottom:0}
-td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
-.pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap}
-.pill.bad{background:var(--flag-soft);color:var(--flag)}
-.pill.mid{background:var(--bg-2);color:var(--fg-2)}
-.pill.good{background:var(--accent-soft);color:var(--accent)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:16px 0 20px}
-.stat{background:var(--bg-2);border-radius:6px;padding:14px 16px;min-width:0}
-.stat b{display:block;font-family:var(--font-display);font-size:28px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums;margin-bottom:4px}
-.stat span{font-size:14px;color:var(--fg-2);line-height:1.35;display:block}
-.contour{border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin:14px 0;min-width:0}
-.contour h3{margin:0 0 4px;font-size:19px}
-.contour .when{font-size:13px;color:var(--fg-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:block}
-.contour ul{margin-bottom:0}
-.check{list-style:none;padding:0}
-.check li{padding-left:28px;position:relative;margin-bottom:8px}
-.check li::before{content:"";position:absolute;left:0;top:5px;width:16px;height:16px;border:1.5px solid var(--fg-2);border-radius:4px}
-.who{font-size:13px;color:var(--fg-2);text-transform:uppercase;letter-spacing:.05em;margin-right:6px}
-.sources{font-size:14px;color:var(--fg-2)}
-.sources li{margin-bottom:3px}
-footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:14px;color:var(--fg-2)}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:14px;color:var(--fg-2)}
 .sign{display:block;margin-top:28px;font-size:11px;letter-spacing:.04em;color:var(--fg-2);opacity:.7;text-align:center}
-@media (max-width:480px){body{font-size:16px}.lead{font-size:18px}h2{font-size:23px}}
-@media (prefers-reduced-motion:no-preference){a{transition:color .15s}}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font-size:13px;padding:6px 9px;border-radius:6px;transform:translate(-50%,-120%);white-space:nowrap;opacity:0;transition:opacity .12s}
 </style>
 </head>
 <body>
+
+<nav class="top" aria-label="Разделы"><div class="wrap">
+<a href="#diag">Диагноз</a><a href="#silence">Что случилось</a><a href="#outside">Снаружи</a><a href="#assets">Активы</a><a href="#market">Рынок и соседи</a><a href="#system">Система</a><a href="#calc">Калькулятор</a><a href="#days30">30 дней</a><a href="#metrics">Метрики</a><a href="#ask">Вопросы</a>
+</div></nav>
+
 <div class="wrap">
 
-<header class="top">
+<header class="hero" id="diag">
   <p class="eyebrow">Дом отдыха и чтения 1898 · разбор снаружи</p>
   <h1>Продукт сильный. Системы спроса нет. Вот что с этим делать</h1>
-  <p class="lead">Вова, я прошёл по всему, что про «1898» видно из интернета: сайт, карты, агрегаторы, соцсети, пресса, реестры, конкуренты в радиусе 50 км и аналоги в России и за рубежом. Ниже диагноз, что у вас лежит без дела, и каркас системы, которая превращает это в брони.</p>
+  <p class="lead">Вова, я прошёл по всему, что про «1898» видно из интернета: сайт, карты, агрегаторы, соцсети, пресса, реестры, конкуренты в радиусе 50 км и аналоги в России и за рубежом. Здесь диагноз, что у вас лежит без дела, и каркас системы, которая превращает это в брони.</p>
   <div class="meta"><span>4 октября 2026</span><span>Дмитрий Хинкис</span><span>Черновик для разговора, не финальный план</span></div>
+  <div class="tiles">
+    <div class="tile good"><b>4.9</b><span>рейтинг на Яндекс Картах, 19 оценок на 5 из 20</span></div>
+    <div class="tile bad"><b>3</b><span>новых отзыва за весь 2026 год против 17 за полгода 2025</span></div>
+    <div class="tile bad"><b>11 мес</b><span>молчат Instagram и VK, Telegram-канала нет</span></div>
+    <div class="tile bad"><b>×2,4</b><span>цена на Островке выше, чем на сайте: 19 634 ₽ против 8 000 ₽</span></div>
+    <div class="tile bad"><b>−15%</b><span>снижены цены с запуска: 9 / 18 / 20 → 8 / 16 / 15 тыс. ₽</span></div>
+  </div>
+  <div class="row">
+    <div class="panel plain">
+      <h3>Диагноз в трёх строках</h3>
+      <ol>
+        <li><strong>Продукт редкий и сделан хорошо.</strong> Единственный в стране загородный дом, построенный вокруг библиотеки в сельской школе 1898 года. В отзывах нет претензий к сути, есть одна свежая претензия к уходу за территорией.</li>
+        <li><strong>Спрос никто не собирает.</strong> Единственный живой канал - карточка на Яндекс Картах, куда гости попадают случайно. Всё остальное либо молчит, либо настроено так, что не продаёт.</li>
+        <li><strong>Это уже видно в цифрах.</strong> Цены снижены, отзывы иссякли, а в отчётности ООО за 2025 год выручка 626 тыс. ₽ при убытке 1,3 млн. Если цифры полные, загрузка была около 5%. Если брони идут через другое лицо, скажи, и я пересчитаю.</li>
+      </ol>
+    </div>
+    <div class="callout flag" style="margin:0"><p><strong>Сначала территория, потом маркетинг.</strong> Единственный отзыв на 4 оставлен 29 августа 2026: грязь после дождя на неотсыпанной дорожке, борщевик, нет уличного света, мутная вода в бассейне, один мангал на все домики, в заезд не было повара. Спустя год после открытия. Любая волна внимания до того, как это закрыто, принесёт волну таких отзывов.</p></div>
+  </div>
 </header>
 
-<h2>Диагноз в трёх строках</h2>
-<ol>
-  <li><strong>Продукт редкий и сделан хорошо.</strong> Единственный в стране загородный дом, построенный вокруг библиотеки в сельской школе 1898 года. На Яндекс Картах 4.9, в 20 отзывах нет ни одной претензии к сути, только к недоделкам первого месяца.</li>
-  <li><strong>Спрос никто не собирает.</strong> Единственный живой канал - карточка на Яндекс Картах, куда гости попадают случайно. Instagram молчит с 23 октября 2025, VK с 31 августа 2025, Telegram-канала нет, аналитики на сайте нет, пресса закончилась пресс-релизом об открытии.</li>
-  <li><strong>Это уже видно в цифрах.</strong> Цены снижены с 9 / 18 / 20 до 8 / 16 / 15 тыс. ₽. За весь 2026 год три новых отзыва. В отчётности ООО за 2025 год выручка 626 тыс. ₽ при убытке 1,3 млн. Если это полные цифры, загрузка была около 5%. Если брони идут через другое лицо, скажи, и я пересчитаю.</li>
-</ol>
+<section id="silence">
+  <p class="eyebrow">Что случилось с вниманием</p>
+  <h2>Летом 2025 всё работало. Потом выключилось разом</h2>
+  <p class="sub">Публичная активность вокруг «1898» по месяцам: отзывы на Яндекс Картах, посты в Instagram и VK, публикации в прессе. Наведи на столбик, чтобы увидеть цифры.</p>
+  <div class="row">
+    <div class="panel"><div class="chart"><canvas id="chActivity" aria-label="Активность по месяцам" role="img"></canvas></div>
+    <p class="note">Отзывы и пресса по точным датам. Instagram: точные даты у 12 последних постов, 21 пост июля–августа распределён поровну. VK: 11 постов за июль–август.</p></div>
+    <div class="takeaways">
+      <div class="take flag"><b>2 сентября 2025 вы сами всё объяснили</b><span>Пост в Instagram: «продавать здесь больше нельзя, как сказали наши друзья юристы». Запрет рекламы в Instagram в России с 1 сентября 2025. Канал встал. Замены не появилось.</span></div>
+      <div class="take flag"><b>Отзывы иссякли вместе с постами</b><span>14 отзывов за июль–август 2025, затем по одному в месяц, затем ноль. С декабря по июнь ни одного. Это не падение качества, это отсутствие потока гостей, которых просят написать.</span></div>
+      <div class="take"><b>У аналогов главный канал в 2026 - Telegram</b><span>Болотов.Дача 3,4 тыс. подписчиков, Веретьево 9,7 тыс., Переделкино 16,8 тыс. Там же продают заезды и события. У вас Telegram - личный аккаунт для связи.</span></div>
+    </div>
+  </div>
+</section>
 
-<h2>Как «1898» выглядит снаружи</h2>
-<p>Проверял каждую площадку руками, не по сниппетам. Статус на 4 октября 2026.</p>
-<div class="tablewrap"><table>
-<thead><tr><th>Канал</th><th>Что есть</th><th>Статус</th></tr></thead>
-<tbody>
-<tr><td>Яндекс Карты</td><td>4.9, 28 оценок, 20 отзывов, 50 фото. Рубрика «Гостиница». Вы отвечаете на отзывы. Последний отзыв 13.12.2025</td><td><span class="pill good">работает</span></td></tr>
-<tr><td>Яндекс Карты, бистро «Даль»</td><td>Отдельная карточка, 4.4 при 14 оценках. Ниже, чем у отеля</td><td><span class="pill mid">слабо</span></td></tr>
-<tr><td>Яндекс Путешествия</td><td>Карточка есть, в сниппетах 9.7 из 10. Онлайн-брони через неё не видно</td><td><span class="pill mid">не задействован</span></td></tr>
-<tr><td>Островок</td><td>Карточка есть, 1 отзыв (10 из 10). Цена от 19 634 ₽ при 8 000 ₽ на сайте. Гостья пишет: «жаль, что поток гостей минимальный»</td><td><span class="pill bad">цена ×2,4</span></td></tr>
-<tr><td>2ГИС, Zoon</td><td>Карточки есть, отзывов ноль</td><td><span class="pill mid">пусто</span></td></tr>
-<tr><td>Google Maps</td><td>Карточки нет. Запрос «Дом отдыха и чтения» уводит на чужой объект в Подмосковье с 425 отзывами</td><td><span class="pill bad">нет</span></td></tr>
-<tr><td>Google, Bing</td><td>Ни одной страницы dom1898.ru в индексе</td><td><span class="pill bad">нет</span></td></tr>
-<tr><td>Яндекс, небрендовые запросы</td><td>«Глэмпинг Конаково», «домики на выходные Конаково»: вас нет ни в выдаче, ни в подборках mirturbaz, 101Hotels, DTF</td><td><span class="pill bad">нет</span></td></tr>
-<tr><td>Instagram @1898_dom</td><td>1 112 подписчиков, 33 поста, последний 23.10.2025. Тексты хорошие: рецензии с полки, история учителя Кубеева</td><td><span class="pill bad">молчит 11 мес.</span></td></tr>
-<tr><td>VK</td><td>339 подписчиков, 11 постов, последний 31.08.2025. Единственная соцсеть, на которую ссылается сайт</td><td><span class="pill bad">молчит 13 мес.</span></td></tr>
-<tr><td>Telegram</td><td>Только аккаунт для связи @dom1898. Канала нет</td><td><span class="pill bad">нет</span></td></tr>
-<tr><td>Сайт dom1898.ru</td><td>Tilda, бронь через Frontdesk24, оплата Uniteller. Нет Метрики, нет разметки, в sitemap 2 страницы, alt у фото пустые. Движок брони живой</td><td><span class="pill mid">без приборов</span></td></tr>
-<tr><td>Пресса</td><td>Tverlife, АБН24, Mail.ru (уже 404) в августе 2025, всё по одному пресс-релизу. Номинация «Сделано в России 2025». Авторских статей ноль</td><td><span class="pill mid">одна волна</span></td></tr>
-</tbody></table></div>
+<section id="outside">
+  <p class="eyebrow">Как «1898» выглядит снаружи</p>
+  <h2>Тринадцать входов. Работает один</h2>
+  <p class="sub">Каждую площадку проверял руками, не по сниппетам. Статус на 4 октября 2026. Нажми на карточку, чтобы раскрыть детали.</p>
+  <div class="legend"><span><i style="background:var(--ok)"></i>работает</span><span><i style="background:var(--warn)"></i>есть, но не продаёт</span><span><i style="background:var(--flag)"></i>нет или сломано</span></div>
+  <div class="channels">
+    <details class="ch"><summary><span class="dot g"></span><span><span class="name">Яндекс Карты</span><span class="st">4.9 · 28 оценок · 20 отзывов</span></span></summary><div class="body">50 фото, рубрика «Гостиница» (стоит сменить на «База отдыха» и добавить «Библиотека»). Вы отвечаете почти на каждый отзыв, это хорошо. Нет значка «Хорошее место», хотя рейтинг позволяет: не хватает регулярности отзывов и обновлений.</div></details>
+    <details class="ch"><summary><span class="dot y"></span><span><span class="name">Бистро «Даль» на Картах</span><span class="st">4.4 · 14 оценок</span></span></summary><div class="body">Отдельная карточка с рейтингом ниже, чем у отеля. Её видят те, кто ищет «кафе рядом» из Завидово и с дач. Поднимать отдельно: QR в чеке, ответы, фото меню.</div></details>
+    <details class="ch"><summary><span class="dot y"></span><span><span class="name">Яндекс Путешествия</span><span class="st">карточка есть, 9.7 из 10</span></span></summary><div class="body">Через неё идёт 44% броней загородных объектов. Онлайн-бронь из неё не настроена. Вы открылись после 1 января 2025 и попадаете под льготу: комиссия на 2 пункта ниже в первый год плюс бесплатные промо-дни. Не используется.</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">Островок</span><span class="st">1 отзыв · от 19 634 ₽</span></span></summary><div class="body">Карточка есть, классификация указана (реестр С692025005420). Но цена в 2,4 раза выше сайта, 7 фото из 57 загруженных, единственный отзыв заканчивается словами «жаль, что поток гостей минимальный». В таком виде карточка отпугивает.</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">Google Maps и Google</span><span class="st">карточки нет, сайт не в индексе</span></span></summary><div class="body">Запрос «Дом отдыха и чтения» в Google уводит на чужой объект в Подмосковье с 425 отзывами. По site:dom1898.ru ни одной страницы. Любой иностранец, экспат или просто пользователь iPhone с Google по умолчанию вас не найдёт.</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">Поиск без бренда</span><span class="st">«глэмпинг Конаково» - вас нет</span></span></summary><div class="body">По запросам «глэмпинг Конаково», «домики на выходные Конаково» объекта нет ни в выдаче, ни в подборках mirturbaz, 101Hotels, DTF «Топ-12 баз отдыха Конаково». По слову «Сынково» выдачу забирает одноимённая деревня в Подольском районе.</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">Instagram @1898_dom</span><span class="st">1 112 подписчиков · молчит с 23.10.2025</span></span></summary><div class="body">33 поста, 4 хайлайта, не бизнес-аккаунт. Тексты сильные: рецензии на книги с указанием полки, история учителя Макария Кубеева, маршруты. Лучшие посты 55–72 лайка. Этот материал готов для Telegram-канала хоть завтра.</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">VK</span><span class="st">339 подписчиков · молчит с 31.08.2025</span></span></summary><div class="body">Создано 29 июня 2025, 11 постов, все за июль–август. При этом VK - единственная соцсеть, на которую ведёт ссылка с сайта.</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">Telegram</span><span class="st">канала нет</span></span></summary><div class="body">Есть только аккаунт @dom1898 для переписки. Ни канала, ни бота, ни чата гостей.</div></details>
+    <details class="ch"><summary><span class="dot y"></span><span><span class="name">Сайт dom1898.ru</span><span class="st">без приборов</span></span></summary><div class="body">Tilda, бронь через Frontdesk24, оплата Uniteller, движок брони живой. Но нет Яндекс Метрики, нет разметки Schema.org, alt-тексты фото пустые, в sitemap две страницы. Нет отдельных страниц про библиотеку, бистро, маршруты и историю, поэтому нечему ранжироваться.</div></details>
+    <details class="ch"><summary><span class="dot y"></span><span><span class="name">2ГИС и Zoon</span><span class="st">карточки есть, отзывов 0</span></span></summary><div class="body">В 2ГИС 21 фото и полные контакты, включая WhatsApp. На Zoon город указан «Тверь». Включить обе площадки в ритуал отзывов как второй и третий адрес.</div></details>
+    <details class="ch"><summary><span class="dot y"></span><span><span class="name">Пресса</span><span class="st">одна волна, август 2025</span></span></summary><div class="body">Tverlife, АБН24, Mail.ru (уже 404) перепечатали пресс-релиз правительства области. Сноб включил в номинанты «Сделано в России 2025». Ни одной авторской статьи, ни одного блогерского обзора, ни одной подборки «куда поехать из Москвы».</div></details>
+    <details class="ch"><summary><span class="dot r"></span><span><span class="name">Суточно, Броневик, Авито, 101Hotels</span><span class="st">не найдены</span></span></summary><div class="body">Броневик один договором даёт Т-Банк Путешествия, Отелло и корпоративные системы. Авито размещает бесплатно и берёт 15% только с брони. Суточно закрывает Новый год и майские. Нигде вас нет.</div></details>
+  </div>
+</section>
 
-<div class="callout flag"><p><strong>Про Instagram.</strong> В посте от 2 сентября 2025 вы сами написали: «продавать здесь больше нельзя, как сказали наши друзья юристы». Понятно, почему канал встал. Но вместе с ним встало вообще всё, а замены не появилось. У Болотов.Дачи, Веретьево и Переделкино главный канал продаж в 2026 году - Telegram.</p></div>
+<section id="assets">
+  <p class="eyebrow">Что у вас лежит без дела</p>
+  <h2>Восемь активов, за которые другие платят годами</h2>
+  <p class="sub">У вас они уже есть. Ни один не работает на спрос. Нажми «подробнее», чтобы увидеть, как это делают другие.</p>
+  <div class="cards">
+    <div class="card"><div class="k">1898</div><h3>История</h3><p>Крестьянин Егор Столяров, мишурная фабрика, школа за 1000 рублей, учитель Макарий Кубеев, чьи внук и правнучка приехали на День знаний.</p><div class="more">Готовый сюжет для РБК Стиль, Афиши, «Горького», «Полки». Сейчас это два абзаца на сайте и один пост в молчащем Instagram.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">Вы</div><h3>Основатели</h3><p>Продюсер Премии Художественного театра и режиссёр фестиваля «Новый сезон» открыли дом отдыха. Люди, которые десять лет собирали залы.</p><div class="more">Это объясняет прессе, почему здесь будут события, и даёт первую аудиторию: театральную и киношную. Нигде не рассказано, кроме одной заметки на Tverlife.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">1000+</div><h3>Библиотека</h3><p>Графические романы, нон-фикшн, альбомы. Рецензии написаны живым голосом с указанием полки.</p><div class="more">Нет имени куратора, нет текста «почему эти книги», купить книгу нельзя. У Веретьево 800 книг и куратор Анна Наринская, и это попало в РБК Стиль.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">Даль</div><h3>Бистро</h3><p>Хвалят в каждом отзыве: хумус, бармен, «даже куриный суп не скучный».</p><div class="more">Приехать на обед из Завидово или с дачи нельзя, потому что об этом нигде не сказано. У Гуляй-Города ресторан вырос вдвое при падении ночей на 20%.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">Wi-Fi</div><h3>Тишина</h3><p>«Отсутствие связи - преимущество», «идеально для выгоревшего офисного сотрудника». На сайте это раздел «чего нет».</p><div class="more">У британского Unplugged ровно это и есть продукт: телефон в сейф, кнопочная Nokia, минимум три ночи. Загрузка 83% за 2025 год.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">7</div><h3>Кошки</h3><p>Родились на стройке, живут при избе. Упоминаются в половине отзывов.</p><div class="more">В коммуникации сайта их нет. Для книжной аудитории это не мелочь, а половина причины выбрать именно вас.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">25 км</div><h3>Соседство</h3><p>Миллион гостей в год в Завидово. Дубна с ОИЯИ и IT-компаниями в 40 км. Подвесной мост на границе областей.</p><div class="more">Гости Завидово ищут «куда ещё съездить» и «где тише». Гостям фестивалей IRONSTAR и «Русского радио» не хватает мест. Ни одного формата для них.</div><button type="button">подробнее</button></div>
+    <div class="card"><div class="k">24</div><h3>Ротонда и коворкинг</h3><p>Гость сам написал: «можно вести семинары». Ни одного группового предложения.</p><div class="more">Выкуп целиком командой на стратсессию - единственный формат, где ваш размер не минус, а плюс. Для Радиссона на 239 номеров группа из 20 человек не событие. Для вас это полный дом.</div><button type="button">подробнее</button></div>
+  </div>
+</section>
 
-<h2>Что у вас лежит без дела</h2>
-<p>Это активы, за которые другие платят годами. У вас они есть и нигде не работают.</p>
-<ul>
-  <li><strong>История.</strong> Крестьянин Егор Столяров, мишурная фабрика, школа за 1000 рублей, учитель Макарий Кубеев, чьи внук и правнучка приехали на День знаний. Готовый сюжет для РБК Стиль, Афиши, «Горького», «Полки». Сейчас это два абзаца на сайте.</li>
-  <li><strong>Вы сами.</strong> Продюсер Премии Художественного театра и режиссёр фестиваля «Новый сезон» открыли дом отдыха. Люди, которые десять лет собирали залы. Это объясняет прессе, почему здесь будут события, и даёт первую аудиторию: театральную и киношную. Нигде не рассказано.</li>
-  <li><strong>Библиотека.</strong> 1000+ книг с внятным вкусом: графические романы, нон-фикшн, альбомы. Рецензии в Instagram написаны живым голосом. Нет имени куратора, нет текста «почему эти книги», купить книгу нельзя. У Веретьево 800 книг и куратор Анна Наринская, и это попало в РБК Стиль.</li>
-  <li><strong>Бистро «Даль».</strong> Хвалят в каждом отзыве: хумус, бармен, «даже куриный суп не скучный». Приехать на обед из Завидово или с дачи нельзя, потому что об этом нигде не сказано.</li>
-  <li><strong>Тишина без Wi-Fi.</strong> В отзывах стопроцентный плюс: «отсутствие связи - преимущество», «идеально для выгоревшего офисного сотрудника». На сайте это раздел «чего нет». У британского Unplugged ровно это и есть продукт: телефон в сейф, кнопочная Nokia, минимум три ночи, загрузка 83% за 2025 год.</li>
-  <li><strong>Кошки.</strong> Семь или восемь, родились на стройке. Упоминаются в половине отзывов. В коммуникации сайта их нет.</li>
-  <li><strong>Соседство.</strong> Миллион гостей в год в Завидово в 25 км, которые ищут «куда ещё съездить» и «где тише». Дубна с ОИЯИ и IT-компаниями в 40 км. Подвесной мост на границе областей, грибной сентябрь, каток зимой.</li>
-  <li><strong>Ротонда и коворкинг.</strong> Гость сам написал «можно вести семинары». Ни одного группового или корпоративного предложения. При ёмкости 24 человека выкуп целиком командой на стратсессию - единственный формат, где ваш размер не минус, а плюс.</li>
-</ul>
+<section id="market">
+  <p class="eyebrow">Рынок и соседи</p>
+  <h2>Глэмпинги падают, Тверская область растёт, ваша ниша пустая</h2>
+  <div class="tiles" style="margin-bottom:6px">
+    <div class="tile bad"><b>150+ из 429</b><span>классифицированных глэмпингов выставлены на продажу в 2026. Загрузка середняков около 36%</span></div>
+    <div class="tile good"><b>+48%</b><span>турпоток Тверской области за 2025, топ-5 по росту в России</span></div>
+    <div class="tile good"><b>+83%</b><span>глэмпинги области весной 2026, третье место в стране</span></div>
+    <div class="tile"><b>60%</b><span>броней загородных объектов идут через Яндекс Путешествия и Островок</span></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="on" data-tab="t-map" role="tab">Схема соседей</button>
+    <button data-tab="t-trust" role="tab">Разрыв в доверии</button>
+    <button data-tab="t-price" role="tab">Где вы по цене</button>
+    <button data-tab="t-analog" role="tab">Что делают аналоги</button>
+  </div>
+  <div class="tabpanel on" id="t-map">
+    <div class="row">
+      <div class="panel">
+        <svg class="map" viewBox="0 0 640 520" role="img" aria-label="Схема соседей в радиусе 50 км">
+          <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--fg-2)"/></marker></defs>
+          <circle cx="320" cy="250" r="100" fill="none" stroke="var(--line)" stroke-dasharray="4 4"/>
+          <circle cx="320" cy="250" r="200" fill="none" stroke="var(--line)" stroke-dasharray="4 4"/>
+          <text x="320" y="146" text-anchor="middle" font-size="11" fill="var(--fg-2)">25 км</text>
+          <text x="320" y="46" text-anchor="middle" font-size="11" fill="var(--fg-2)">50 км</text>
+          <!-- Волга / Московское море schematic -->
+          <path d="M40 300 C 120 250, 200 230, 260 160 S 330 90, 360 60" fill="none" stroke="var(--c3)" stroke-width="10" stroke-opacity=".35" stroke-linecap="round"/>
+          <text x="60" y="290" font-size="11" fill="var(--c3)">Иваньковское вдхр.</text>
+          <!-- 1898 -->
+          <circle cx="320" cy="250" r="9" fill="var(--accent)"/>
+          <text x="334" y="246" font-size="14" font-weight="700" fill="var(--fg)">1898, Сынково</text>
+          <text x="334" y="262" font-size="11" fill="var(--fg-2)">8–16 тыс. ₽ · 28 оценок</text>
+          <!-- Konakovo cluster NW ~20km -->
+          <circle cx="250" cy="180" r="6" fill="var(--c2)"/>
+          <text x="140" y="172" font-size="12" font-weight="600" fill="var(--fg)">Конаково</text>
+          <text x="118" y="186" font-size="11" fill="var(--fg-2)">River Club · 9 397 оц.</text>
+          <text x="118" y="199" font-size="11" fill="var(--fg-2)">Конаково.Аэро · 1 085</text>
+          <text x="118" y="212" font-size="11" fill="var(--fg-2)">Карачарово, 20 000 книг</text>
+          <!-- Zavidovo W ~30km -->
+          <circle cx="200" cy="280" r="8" fill="var(--c2)"/>
+          <text x="60" y="320" font-size="12" font-weight="600" fill="var(--fg)">Завидово</text>
+          <text x="60" y="334" font-size="11" fill="var(--fg-2)">Radisson · 18 956 оц.</text>
+          <text x="60" y="347" font-size="11" fill="var(--fg-2)">Ямская слобода · 3 012</text>
+          <text x="60" y="360" font-size="11" fill="var(--fg-2)">УпДК · 6 747 · ~1 млн гостей/год</text>
+          <!-- Dubna NNE ~22km -->
+          <circle cx="350" cy="165" r="6" fill="var(--c4)"/>
+          <text x="362" y="160" font-size="12" font-weight="600" fill="var(--fg)">Дубна</text>
+          <text x="362" y="174" font-size="11" fill="var(--fg-2)">ОИЯИ, IT, паром · Озеро Ле</text>
+          <!-- Veretevo ENE ~33km -->
+          <circle cx="440" cy="205" r="6" fill="var(--c1)"/>
+          <text x="452" y="200" font-size="12" font-weight="600" fill="var(--fg)">Веретьево</text>
+          <text x="452" y="214" font-size="11" fill="var(--fg-2)">библиотеки Наринской, 98%</text>
+          <!-- Kimry NE ~40km -->
+          <circle cx="470" cy="130" r="5" fill="var(--c3)"/>
+          <text x="480" y="126" font-size="12" font-weight="600" fill="var(--fg)">Кимры</text>
+          <text x="480" y="140" font-size="11" fill="var(--fg-2)">Вили Улей, от 25 500 ₽</text>
+          <!-- Tver far WNW -->
+          <line x1="150" y1="230" x2="60" y2="215" stroke="var(--fg-2)" marker-end="url(#arr)"/>
+          <text x="62" y="240" font-size="11" fill="var(--fg-2)">Тверь, 75 км</text>
+          <!-- Moscow S -->
+          <line x1="320" y1="420" x2="320" y2="490" stroke="var(--fg-2)" marker-end="url(#arr)"/>
+          <text x="330" y="470" font-size="12" font-weight="600" fill="var(--fg)">Москва, МКАД</text>
+          <text x="330" y="485" font-size="11" fill="var(--fg-2)">1:30 по М-11 · 3:10 электричкой</text>
+          <!-- Sestra river / bridge -->
+          <circle cx="395" cy="300" r="4" fill="var(--c1)"/>
+          <text x="404" y="304" font-size="11" fill="var(--fg-2)">мост через Сестру, граница областей</text>
+        </svg>
+        <p class="note">Схема, не карта: направления и расстояния примерные. Цветом: конкуренты за объём, партнёры, аналоги по смыслу.</p>
+      </div>
+      <div class="takeaways">
+        <div class="take"><b>Прямого аналога нет</b><span>В радиусе 50 км нет ни одного «тихого дома с библиотекой». Соседи продают воду первой линии, SPA и крытые бассейны. Вы продаёте другое.</span></div>
+        <div class="take flag"><b>Тему уже застолбили рядом</b><span>Глэмпинг «Карачарово» в 35 км заявляет библиотеку на 20 000 книг. Пока слаб: 4.4 при 9 оценках. Но слово «библиотека» в Конаково уже не только ваше.</span></div>
+        <div class="take"><b>Веретьево - не конкурент, а доказательство</b><span>Та же идея в 33 км: литература, парк, библиотеки с куратором. 98% загрузки в сезон, с 2017 без агрегаторов. Значит, модель работает в этой же географии.</span></div>
+        <div class="take"><b>Завидово - источник, а не угроза</b><span>Миллион гостей в год и 1 600 номеров после второй очереди. Им нужно «тихое место рядом» на день и на ночь. Вы в 25 км.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabpanel" id="t-trust">
+    <div class="row">
+      <div class="panel"><div class="chart tall"><canvas id="chTrust" role="img" aria-label="Число оценок на Яндекс Картах у соседей"></canvas></div><p class="note">Число оценок на Яндекс Картах, логарифмическая шкала. Данные на 4 октября 2026.</p></div>
+      <div class="takeaways">
+        <div class="take flag"><b>Разрыв в сотни раз</b><span>У вас 28 оценок. У ближайшего по формату соседа Жуковка Village 277, у Конаково.Аэро 1 085, у River Club 9 397. Гость, который сравнивает карточки, видит у вас «новичка».</span></div>
+        <div class="take"><b>Качество уже есть, нужно количество</b><span>19 из 20 оценок на 5. Значок «Хорошее место» даётся при рейтинге от 4.5 и активном профиле. Вопрос только в ритуале: QR на выезде, сообщение на следующий день, ответ на каждый отзыв.</span></div>
+        <div class="take"><b>Цель на год</b><span>150+ оценок. Это 10 в месяц, то есть каждый третий-четвёртый гость при загрузке 50%.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabpanel" id="t-price">
+    <div class="row">
+      <div class="panel"><div class="chart tall"><canvas id="chPrice" role="img" aria-label="Цена за ночь у соседей"></canvas></div><p class="note">Минимальная цена за ночь на двоих по сайтам и агрегаторам, октябрь 2026. У 1898 показана цена сайта.</p></div>
+      <div class="takeaways">
+        <div class="take"><b>Вы между массовыми и курортами</b><span>8 тыс. ₽ ставит вас выше глэмпингов за 5–7 тыс. и ниже курортов за 12–19 тыс. Это правильная середина для бутика, если за цену стоит история, а не только домик 15 м².</span></div>
+        <div class="take flag"><b>Один тариф на всё</b><span>В движке брони единственный «Стандартный тариф». Нет разницы будни / выходные / праздники, нет скидки за три и пять ночей, нет пакетов с питанием. Доходом никто не управляет.</span></div>
+        <div class="take"><b>Пакеты дороже ночей</b><span>Reading Retreat в Британии продаёт три ночи с автором за 675–995 фунтов и распродан. «По слогам» в Подмосковье берёт 15–25 тыс. ₽ за выходные без своей площадки. Пакет с программой стоит в полтора-два раза дороже той же ночёвки.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="tabpanel" id="t-analog">
+    <div class="cards">
+      <div class="card"><h3>Веретьево, Талдом</h3><p>Семь библиотек с куратором Анной Наринской, парк Бродского, юбилеи писателей, коллаборации с музеями. С 2017 без агрегаторов.</p><span class="res">98% загрузки в сезон · Telegram 9,7 тыс.</span></div>
+      <div class="card"><h3>Болотов.Дача, Тульская обл.</h3><p>Книжный клуб у камина, шахматные выходные, концерты с соседями. Скидки 7 / 10 / 15% за 3 / 5 / 7 ночей.</p><span class="res">Telegram 3,4 тыс. · Афиша, Т—Ж</span></div>
+      <div class="card"><h3>Переделкино</h3><p>Открытый конкурс резиденций, Reading Camp на выходные, книжный клуб по субботам, «полка писателя» в каждом номере.</p><span class="res">25 заявок на место · Telegram 16,8 тыс.</span></div>
+      <div class="card"><h3>Гуляй-Город, Ока</h3><p>Ресторан и допуслуги как вторая выручка. Ночей продали на 20% меньше, выручка выросла.</p><span class="res">+18% выручки · ресторан ×2</span></div>
+      <div class="card"><h3>Gladstone's Library, Уэльс</h3><p>Писательские резиденции, однодневный фестиваль с четырьмя авторами и скидкой на ночлег. Доход из четырёх источников.</p><span class="res">£1,5 млн в год</span></div>
+      <div class="card"><h3>The Open Book, Шотландия</h3><p>Гость на неделю становится хозяином книжного магазина. Одна статья в BuzzFeed.</p><span class="res">Бронь до февраля 2028</span></div>
+      <div class="card"><h3>Unplugged, Британия</h3><p>Кабины в полутора часах от города, телефон в сейф, кнопочная Nokia, минимум три ночи.</p><span class="res">83% загрузки за 2025</span></div>
+      <div class="card"><h3>«По слогам», Москва</h3><p>Книжные ретриты по 20 человек в Подмосковье и Пушкинских Горах. Своей площадки нет.</p><span class="res">15–25 тыс. ₽ за билет</span></div>
+    </div>
+    <p class="note" style="margin-top:14px">Общее у всех восьми: календарь событий, куратор или автор с именем, собственный канал, партнёрства с культурными институциями, ритуал отзывов. У «1898» нет ни одного из пяти элементов. При этом сырьё для всех пяти уже есть.</p>
+  </div>
 
-<h2>Рынок за три факта</h2>
-<div class="grid">
-  <div class="stat"><b>150+ из 429</b><span>классифицированных глэмпингов выставлены на продажу в 2026. Средняя загрузка у середняков около 36%. Выживают те, у кого инфраструктура и календарь событий</span></div>
-  <div class="stat"><b>+48%</b><span>турпоток Тверской области за 2025, топ-5 по росту в России. Глэмпинги области весной 2026 выросли на 83%, третье место в стране</span></div>
-  <div class="stat"><b>60%</b><span>броней загородных объектов идут через Яндекс Путешествия и Островок. Прямые брони с сайта в среднем 28%</span></div>
-</div>
-<p>Литературные ретриты в 2026 году назвали трендом Коммерсантъ, Forbes и National Geographic. В России ниша пустая: «По слогам» собирает 20 человек на выезды в Подмосковье по 15–25 тыс. ₽ за билет, не имея своей площадки. Британский Reading Retreat продаёт три ночи с автором за 675–995 фунтов и распродан до конца осени. Прямого аналога «тихий дом с библиотекой» в радиусе 50 км от Сынково нет. Единственный, кто заявил тему, глэмпинг «Карачарово» с библиотекой на 20 000 книг, пока слаб: 4.4 при 9 оценках.</p>
+  <div class="quote">Единственный в России дом отдыха, построенный вокруг сельской библиотеки 1898 года. Полтора часа от Москвы. Без Wi-Fi, с печкой, бассейном и ближневосточным бистро у пруда.<small>Позиционирование для внешнего мира, без слова «глэмпинг»: в 2026 оно значит «распродажа». Для англоязычных подборок: Russia's reading retreat, в одном ряду с Gladstone's Library и Sylvia Beach Hotel.</small></div>
+</section>
 
-<h3>Что делают аналоги, чего нет у вас</h3>
-<div class="tablewrap"><table>
-<thead><tr><th>Кто</th><th>Что делает</th><th>Результат</th></tr></thead>
-<tbody>
-<tr><td>Веретьево, Талдом, 50 км от вас</td><td>Семь библиотек с куратором, парк Бродского, юбилеи писателей, с 2017 без агрегаторов</td><td class="num">98% загрузки в сезон, Telegram 9,7 тыс.</td></tr>
-<tr><td>Болотов.Дача, Тульская обл.</td><td>Книжный клуб у камина, шахматные выходные, концерты с соседями, скидки 7 / 10 / 15% за 3 / 5 / 7 ночей</td><td class="num">Telegram 3,4 тыс., Афиша, Т—Ж</td></tr>
-<tr><td>Переделкино</td><td>Открытый конкурс резиденций, Reading Camp на выходные, книжный клуб по субботам</td><td class="num">25 заявок на место, Telegram 16,8 тыс.</td></tr>
-<tr><td>Гуляй-Город, Ока</td><td>Ресторан и допуслуги как вторая выручка</td><td class="num">Ночей −20%, выручка +18%, ресторан ×2</td></tr>
-<tr><td>Gladstone's Library, Уэльс</td><td>Писательские резиденции, однодневный фестиваль с четырьмя авторами и скидкой на ночлег</td><td class="num">£1,5 млн в год, ни один источник больше 40%</td></tr>
-<tr><td>The Open Book, Шотландия</td><td>Гость на неделю становится хозяином книжного</td><td class="num">Одна статья, бронь до февраля 2028</td></tr>
-</tbody></table></div>
+<section id="system">
+  <p class="eyebrow">Система спроса</p>
+  <h2>Пять контуров. Запускаются по очереди, живут вместе</h2>
+  <p class="sub">Первый ставит приборы и открывает двери. Остальные дают повод приехать. Нажми на контур.</p>
+  <div class="flow" role="tablist">
+    <button class="on" data-tab="c-a" role="tab"><b>A. Фундамент</b><small>дистрибуция и доверие · 30 дней</small></button>
+    <button data-tab="c-b" role="tab"><b>B. Продукт как медиа</b><small>события и пакеты · 30–90 дней</small></button>
+    <button data-tab="c-c" role="tab"><b>C. Свои каналы</b><small>Telegram и база гостей · с 30 дня</small></button>
+    <button data-tab="c-d" role="tab"><b>D. Заёмное внимание</b><small>пресса, посевы, партнёры · 60–180 дней</small></button>
+    <button data-tab="c-e" role="tab"><b>E. Мир</b><small>английская страница и списки · 6–12 мес</small></button>
+  </div>
+  <div class="tabpanel on contour" id="c-a"><div class="row">
+    <div class="panel plain"><ul>
+      <li><strong>Яндекс Путешествия.</strong> Онлайн-бронь через channel manager из Frontdesk24. Льгота для открывшихся после 1 января 2025: комиссия минус 2 пункта в первый год и бесплатные промо-дни.</li>
+      <li><strong>Островок.</strong> Выровнять цену с сайтом, загрузить все 57 фото и политику отмены. Добавить Ozon Travel и Броневик: один договор с Броневиком открывает Т-Банк, Отелло и корпоративные системы. Авито бесплатно, 15% с брони.</li>
+      <li><strong>Яндекс Карты.</strong> Рубрика «База отдыха», отдельная карточка библиотеки, подъём рейтинга бистро, один адрес везде (сейчас «д. 9» и «д. 9б, стр. 1» живут параллельно). Цель - значок «Хорошее место».</li>
+      <li><strong>Google Business.</strong> Завести карточку, забрать бренд-запрос у чужого объекта.</li>
+      <li><strong>Ритуал отзывов.</strong> QR на выезде и в чеке бистро, сообщение на следующий день. 8–10 отзывов в месяц вместо трёх в год.</li>
+      <li><strong>Сайт.</strong> Метрика с целями, разметка Schema.org, страницы «Библиотека», «Бистро», «Маршруты», «История школы», английская страница.</li>
+      <li><strong>Тарифы.</strong> Будни / выходные / праздники, скидка за 3 / 5 / 7 ночей, доплата за вид на пруд.</li>
+    </ul></div>
+    <div class="takeaways"><div class="take"><b>Зачем первым</b><span>Без этого всё остальное льёт воду в решето: пришедший по статье гость не найдёт вас в Google, увидит 19 634 ₽ на Островке и 28 оценок на Картах.</span></div><div class="take"><b>Что это стоит</b><span>Почти ничего, кроме времени: комиссии платятся с факта брони. Самое дорогое - channel manager, от 2–3 тыс. ₽ в месяц.</span></div><div class="take flag"><b>Что сделать до запуска</b><span>Дорожки, свет, вода в бассейне, мангалы. Отзыв от 29 августа 2026 про это.</span></div></div>
+  </div></div>
+  <div class="tabpanel contour" id="c-b"><div class="row">
+    <div class="panel plain"><ul>
+      <li><strong>«Читательские выходные» с автором.</strong> Две ночи, питание, вечер с гостем, 20 человек. «По слогам» и книжные клубы Москвы уже собирают такие группы и ищут площадку.</li>
+      <li><strong>«Библиотекарь на неделю».</strong> Конкурс на право прожить неделю в Доме библиотекаря и вести библиотеку. Контент и инфоповод четыре раза в год.</li>
+      <li><strong>«Три ночи без телефона».</strong> Тариф с минимальным сроком, телефон в сейфе, кнопочный на связь, бумажная карта маршрутов.</li>
+      <li><strong>Дневной тариф</strong> «библиотека + бассейн + обед» для гостей Завидово и дачников.</li>
+      <li><strong>Полка на продажу</strong> от двух-трёх издательств: Individuum, Ad Marginem, Альпина, Подписные. У их каналов охват 4–8 тыс. на пост. В России такого прецедента нет.</li>
+      <li><strong>Куратор библиотеки</strong> с именем и один текст «почему эти книги».</li>
+      <li><strong>«Тихий офсайт»</strong> на 20–24 человека: коворкинг в избе, ротонда, бистро. Дубна, резиденты Завидово, московские команды.</li>
+      <li><strong>Зима.</strong> Продаём печку, каток и какао, а не бассейн. Домики 15 м² против крытых бассейнов соседей не выиграют.</li>
+    </ul></div>
+    <div class="takeaways"><div class="take"><b>Зачем</b><span>Событие даёт повод приехать на конкретную дату, а прессе - повод писать не «открылся», а «происходит». Это ваша профессия.</span></div><div class="take"><b>Экономика</b><span>Пакет с программой продаётся в 1,5–2 раза дороже ночёвки и заполняет будни и межсезонье, где у глэмпингов провал.</span></div><div class="take"><b>Первые три</b><span>Книжный клуб выходного дня, «три ночи без телефона» и дневной тариф. Не требуют ничего строить.</span></div></div>
+  </div></div>
+  <div class="tabpanel contour" id="c-c"><div class="row">
+    <div class="panel plain"><ul>
+      <li><strong>Публичный Telegram-канал.</strong> Контент уже написан: рецензии, история, сезонные посты из Instagram. Перенос аудитории оттуда. Цель первого года 3 тыс. подписчиков из правильных людей.</li>
+      <li><strong>База гостей.</strong> Каждый выехавший получает календарь следующих событий и промокод на возврат. У лучших объектов повторные гости дают до половины броней.</li>
+      <li><strong>Сайт как медиа.</strong> Раздел «Что почитать», история школы, маршруты с картой, календарь. Это же даёт поисковый трафик по длинным запросам.</li>
+      <li><strong>Instagram</strong> как витрина без продающих постов, но с регулярностью. <strong>VK</strong> как зеркало.</li>
+    </ul></div>
+    <div class="takeaways"><div class="take"><b>Зачем</b><span>Прямые брони не платят комиссию 17–25%. У загородных объектов Подмосковья прямой канал даёт 56–65% ночей, у вас сейчас неизвестно сколько.</span></div><div class="take"><b>Кто ведёт</b><span>Тот, кто писал посты в Instagram. Голос уже найден, менять не надо.</span></div></div>
+  </div></div>
+  <div class="tabpanel contour" id="c-d"><div class="row">
+    <div class="panel plain"><ul>
+      <li><strong>Пресса под историю.</strong> РБК Стиль (писал о Веретьево), Афиша Daily (ежегодная июньская подборка глэмпингов, Тверской области в ней нет), Москвич Mag («Почему вы должны нас знать»), Сноб (уже номинировал), Inc. и vc.ru как бизнес-кейс, «Горький» и «Полка», где темы отелей нет вообще.</li>
+      <li><strong>Telegram-посевы</strong> там, где есть реальный охват: «Куда поехать» (охват 9,3 тыс. на пост), «Из Москвы на выходные» (4 895 ₽ за пост), «Лучшие отели Подмосковья», книжные «Читающий домик» (1 958 ₽) и «Книжная элита» (охват 9,7 тыс.). Бюджет 30–50 тыс. ₽ в месяц.</li>
+      <li><strong>Операторы ретритов и книжные клубы.</strong> Им нужна база на 20 человек в полутора часах от Москвы.</li>
+      <li><strong>Завидово.</strong> Стойки в отелях курорта как «тихое место рядом», обмен дневными тарифами, гости фестивалей IRONSTAR и «Русского радио», которым не хватило мест.</li>
+      <li><strong>Локальные каналы</strong> для бистро и дневных визитов: «ЧП Дубна» (4 194 ₽ за 4 тыс. просмотров), «Конаково», «Завидово нынче».</li>
+    </ul></div>
+    <div class="takeaways"><div class="take"><b>Книжная аудитория дешевле</b><span>Посев в книжном канале стоит 600–1 000 ₽ за тысячу просмотров, в трэвел-паблике 3–5 тыс. И попадает точнее.</span></div><div class="take"><b>Пресса приходит на историю</b><span>У Веретьево Forbes и РБК Стиль вышли на основателя и парк Бродского, а не на «открылся глэмпинг». У вас история не хуже.</span></div></div>
+  </div></div>
+  <div class="tabpanel contour" id="c-e"><div class="row">
+    <div class="panel plain"><ul>
+      <li><strong>Английская страница</strong> и индексация в Google. Сейчас Google не знает о сайте вообще.</li>
+      <li><strong>Списки library hotels и reading retreats:</strong> Atlas Obscura, подборки National Geographic и Condé Nast Traveler о «readaways», Lonely Planet.</li>
+      <li><strong>Одна история:</strong> школа 1898 года стала библиотекой-отелем под Москвой. Фото уже уровня глянца.</li>
+    </ul></div>
+    <div class="takeaways"><div class="take"><b>Честно про брони</b><span>Иностранных гостей будет мало из-за платежей и виз. Но строчка «о нас писал Nat Geo» усиливает каждое российское упоминание и каждую карточку.</span></div></div>
+  </div></div>
+</section>
 
-<h2>Позиционирование</h2>
-<p>Уйти от слова «глэмпинг». В 2026 оно значит «распродажа». Оставить то, что уже стоит в названии.</p>
-<div class="quote">Единственный в России дом отдыха, построенный вокруг сельской библиотеки 1898 года. Полтора часа от Москвы. Без Wi-Fi, с печкой, бассейном и ближневосточным бистро у пруда.<small>Формула для внешнего мира. Для англоязычных подборок: Russia's reading retreat, в одном ряду с Gladstone's Library и Sylvia Beach Hotel</small></div>
+<section id="calc">
+  <p class="eyebrow">Калькулятор</p>
+  <h2>Что стоит каждый процент загрузки</h2>
+  <p class="sub">Оценка выручки номерного фонда без бистро и допуслуг: 10 домиков, 365 ночей. Подвигай ползунки.</p>
+  <div class="calc">
+    <div>
+      <label for="occ">Средняя загрузка за год <b id="occV">35%</b></label>
+      <input type="range" id="occ" min="5" max="90" value="35" step="1">
+      <label for="adr">Средняя цена ночи <b id="adrV">9 000 ₽</b></label>
+      <input type="range" id="adr" min="7000" max="18000" value="9000" step="500">
+      <p class="note">Для сравнения: 5% - загрузка, которая следует из выручки 626 тыс. ₽ за 2025 год, если отчётность полная. 36% - средняя по глэмпингам-середнякам в 2026. 98% в сезон у Веретьево.</p>
+    </div>
+    <div>
+      <div class="out">
+        <div><b id="rev">0</b><span>выручка номеров в год</span></div>
+        <div><b id="nights">0</b><span>проданных ночей в год</span></div>
+        <div><b id="revM">0</b><span>в среднем в месяц</span></div>
+        <div><b id="delta">0</b><span>прибавка к сценарию 5%</span></div>
+      </div>
+      <div class="note" style="margin-top:14px">Загрузка относительно цели 60%</div>
+      <div class="bar"><i id="occBar" style="width:58%"></i></div>
+      <p class="note">Бистро и допуслуги у аналогов дают ещё 30–65% сверху: у Гуляй-Города 21 млн из 32 за полугодие.</p>
+    </div>
+  </div>
+</section>
 
-<h2>Система спроса: пять контуров</h2>
-<p>Контуры запускаются по очереди, но живут параллельно. Первый ставит приборы и открывает двери. Остальные дают повод прийти.</p>
-
-<div class="contour">
-  <h3>A. Фундамент: дистрибуция и доверие</h3>
-  <span class="when">первые 30 дней</span>
-  <ul>
-    <li>Яндекс Путешествия: подключить онлайн-бронь через channel manager из Frontdesk24. Вы открылись после 1 января 2025, значит комиссия на 2 пункта ниже в первый год плюс бесплатные промо-дни. Льгота не используется.</li>
-    <li>Островок: выровнять цену с сайтом, загрузить все фото и политику отмены. Сейчас карточка не продаёт. Добавить Ozon Travel и Броневик: один договор с Броневиком даёт Т-Банк, Отелло и корпоративные системы.</li>
-    <li>Яндекс Карты: рубрика «База отдыха» вместо «Гостиницы», отдельная карточка библиотеки, подъём рейтинга бистро. Цель - значок «Хорошее место»: рейтинг уже есть, нужна регулярность. Один адрес на всех площадках, сейчас «д. 9» и «д. 9б, стр. 1» живут параллельно.</li>
-    <li>Google Business: завести карточку, забрать бренд-запрос у чужого объекта.</li>
-    <li>Ритуал отзывов: QR на выезде и в чеке бистро, сообщение на следующий день. Цель 8–10 отзывов в месяц вместо трёх в год.</li>
-    <li>Сайт: Метрика с целями, разметка Schema.org, отдельные страницы «Библиотека», «Бистро», «Маршруты», «История школы», английская страница. Без этого Google вас не найдёт никогда.</li>
-    <li>Цены: вернуть разницу будни / выходные / праздники и скидку за длину проживания. Один «Стандартный тариф» в движке значит, что доходом никто не управляет.</li>
+<section id="days30">
+  <p class="eyebrow">Первые 30 дней</p>
+  <h2>Что делаем мы, что делаете вы</h2>
+  <p class="sub">Отмечай сделанное, галочки сохраняются в этом браузере. Фильтр по исполнителю.</p>
+  <div class="filters"><button class="on" data-f="all">Все</button><button data-f="vy">Вы</button><button data-f="my">Мы</button><button data-f="vm">Вместе</button></div>
+  <div class="progress"><span id="progT">0 из 12</span><div class="bar"><i id="progBar" style="width:0"></i></div></div>
+  <ul class="todo" id="todo">
+    <li data-w="vy"><input type="checkbox" id="t1"><label for="t1"><span class="who vy">Вы</span>Закрыть замечания по территории: отсыпать дорожку, поставить уличный свет, наладить воду в бассейне, добавить мангалы</label></li>
+    <li data-w="vy"><input type="checkbox" id="t2"><label for="t2"><span class="who vy">Вы</span>Выгрузка загрузки и выручки по месяцам с июля 2025: номера, бистро, допуслуги, источники броней</label></li>
+    <li data-w="vy"><input type="checkbox" id="t3"><label for="t3"><span class="who vy">Вы</span>Доступы: Frontdesk24, Яндекс Бизнес, Tilda, Instagram, VK, домен</label></li>
+    <li data-w="my"><input type="checkbox" id="t4"><label for="t4"><span class="who my">Мы</span>Метрика с целями, разметка Schema.org, alt-тексты, страницы библиотеки, бистро, маршрутов и истории, английская страница</label></li>
+    <li data-w="my"><input type="checkbox" id="t5"><label for="t5"><span class="who my">Мы</span>Яндекс Путешествия с льготой, Островок с выровненной ценой, Броневик, Ozon Travel, Авито, Google Business</label></li>
+    <li data-w="my"><input type="checkbox" id="t6"><label for="t6"><span class="who my">Мы</span>Яндекс Карты: рубрика, карточка библиотеки, единый адрес, подъём карточки бистро</label></li>
+    <li data-w="my"><input type="checkbox" id="t7"><label for="t7"><span class="who my">Мы</span>Telegram-канал: запуск, первые 20 постов из готового материала, перенос аудитории из Instagram</label></li>
+    <li data-w="my"><input type="checkbox" id="t8"><label for="t8"><span class="who my">Мы</span>Ритуал отзывов: QR на выезде и в чеке, шаблон сообщения на следующий день</label></li>
+    <li data-w="vm"><input type="checkbox" id="t9"><label for="t9"><span class="who">Вместе</span>Тарифная сетка: будни, выходные, праздники, скидка за 3 / 5 / 7 ночей, тариф «три ночи без телефона»</label></li>
+    <li data-w="vm"><input type="checkbox" id="t10"><label for="t10"><span class="who">Вместе</span>Календарь событий на зиму и весну: что первое, с кем, когда</label></li>
+    <li data-w="vm"><input type="checkbox" id="t11"><label for="t11"><span class="who">Вместе</span>Куратор библиотеки: кто, текст «почему эти книги», первые два издательства для полки</label></li>
+    <li data-w="vm"><input type="checkbox" id="t12"><label for="t12"><span class="who">Вместе</span>История для прессы: один текст про Столярова, Кубеева и вас, список из пяти изданий, первое письмо</label></li>
   </ul>
-</div>
+</section>
 
-<div class="contour">
-  <h3>B. Продукт как медиа: события и пакеты</h3>
-  <span class="when">30–90 дней</span>
-  <ul>
-    <li><strong>«Читательские выходные» с автором.</strong> Две ночи, питание, вечер с гостем, 20 человек. Операторы вроде «По слогам» уже собирают такие группы и ищут площадку.</li>
-    <li><strong>«Библиотекарь на неделю».</strong> Конкурс на право прожить неделю в Доме библиотекаря и вести библиотеку. Бесплатный контент и инфоповод четыре раза в год.</li>
-    <li><strong>«Три ночи без телефона».</strong> Тариф с минимальным сроком, телефон в сейфе на ресепшене, кнопочный на связь, бумажная карта маршрутов.</li>
-    <li><strong>Дневной тариф</strong> «библиотека + бассейн + обед» для гостей Завидово и дачников.</li>
-    <li><strong>Полка на продажу</strong> от двух-трёх издательств: Individuum, Ad Marginem, Альпина, Подписные. Они получают витрину и аудиторию, вы - контент, авторов на выходные и упоминания в их каналах с охватом 4–8 тыс. на пост. В России такого прецедента нет.</li>
-    <li><strong>Куратор библиотеки с именем</strong> и один текст «почему эти книги».</li>
-    <li><strong>«Тихий офсайт»</strong> на 20–24 человека: коворкинг в избе, ротонда, бистро. Дубна, резиденты Завидово, московские команды.</li>
-    <li>Зимой продаём печку, каток и какао, а не бассейн. Домики 15 м² против крытых бассейнов соседей не выиграют.</li>
-  </ul>
-</div>
+<section id="metrics">
+  <p class="eyebrow">Метрики</p>
+  <h2>Что считаем через 12 месяцев</h2>
+  <div class="metrics">
+    <div class="m head"><span class="h">Метрика</span><span class="h">Сейчас</span><span class="h">Цель</span><span class="h">Путь</span></div>
+    <div class="m"><span>Загрузка</span><span class="now">неизвестна, нужна от вас</span><span class="tg">55–65% в среднем, 90% в выходные</span><div class="bar"><i style="width:8%"></i></div></div>
+    <div class="m"><span>Средняя цена ночи</span><span class="now">8–16 тыс. ₽, один тариф</span><span class="tg">+15% за счёт тарифов и пакетов</span><div class="bar"><i style="width:15%"></i></div></div>
+    <div class="m"><span>Доля прямых броней</span><span class="now">неизвестна</span><span class="tg">50%+</span><div class="bar"><i style="width:10%"></i></div></div>
+    <div class="m"><span>Оценки на Яндекс Картах</span><span class="now">28, три за 2026</span><span class="tg">150+, значок «Хорошее место»</span><div class="bar"><i style="width:19%"></i></div></div>
+    <div class="m"><span>Подписчики Telegram</span><span class="now">0</span><span class="tg">3 000</span><div class="bar"><i style="width:0"></i></div></div>
+    <div class="m"><span>События в календаре</span><span class="now">0</span><span class="tg">18–24 в год</span><div class="bar"><i style="width:0"></i></div></div>
+    <div class="m"><span>Повторные гости</span><span class="now">неизвестно</span><span class="tg">30%</span><div class="bar"><i style="width:5%"></i></div></div>
+    <div class="m"><span>Авторские публикации</span><span class="now">0</span><span class="tg">10+</span><div class="bar"><i style="width:0"></i></div></div>
+  </div>
+  <p class="note">Полоска показывает, где вы сейчас относительно цели. Там, где данных нет, стоит условный минимум до твоей выгрузки.</p>
+</section>
 
-<div class="contour">
-  <h3>C. Собственные каналы</h3>
-  <span class="when">30–60 дней, потом постоянно</span>
-  <ul>
-    <li>Публичный Telegram-канал. Контент уже написан: рецензии, история, сезонные посты. Цель первого года 3 тыс. подписчиков из правильных людей.</li>
-    <li>База гостей: каждый выехавший получает календарь следующих событий и промокод на возврат. У лучших объектов повторные гости дают до половины броней.</li>
-    <li>Instagram как витрина без продающих постов, но с регулярностью. Аудитория там уже есть.</li>
-    <li>VK как зеркало.</li>
-  </ul>
-</div>
-
-<div class="contour">
-  <h3>D. Заёмное внимание</h3>
-  <span class="when">60–180 дней</span>
-  <ul>
-    <li>Пресса под историю, а не под «мы открылись»: РБК Стиль (писал о Веретьево), Афиша Daily (ежегодная июньская подборка глэмпингов, Тверской области там нет), Москвич Mag («Почему вы должны нас знать»), Сноб (уже номинировал), Inc. и vc.ru как бизнес-кейс, «Горький» и «Полка», где темы отелей нет вообще.</li>
-    <li>Telegram-посевы там, где есть реальный охват: «Куда поехать» (40 тыс., охват 9,3 тыс. на пост), «Из Москвы на выходные» (4 895 ₽ за пост), «Лучшие отели Подмосковья», книжные «Читающий домик» (1 958 ₽) и «Книжная элита» (охват 9,7 тыс.). Книжная аудитория в 3–5 раз дешевле трэвел-пабликов и точнее попадает в вас. Бюджет 30–50 тыс. ₽ в месяц.</li>
-    <li>Операторы ретритов и книжные клубы Москвы: им нужна база на 20 человек в полутора часах.</li>
-    <li>Завидово: стойки в отелях курорта как «тихое место рядом», обмен дневными тарифами. Гости фестивалей IRONSTAR и «Русского радио», которым не хватило мест.</li>
-    <li>Локальные каналы для бистро и дневных визитов: «ЧП Дубна» (4 194 ₽ за 4 тыс. просмотров), «Конаково», «Завидово нынче».</li>
-  </ul>
-</div>
-
-<div class="contour">
-  <h3>E. Международное внимание</h3>
-  <span class="when">6–12 месяцев</span>
-  <ul>
-    <li>Иностранных броней будет мало из-за платежей и виз. Но международное упоминание усиливает российское.</li>
-    <li>Английская страница, индексация в Google, подача в списки library hotels и reading retreats: Atlas Obscura, подборки Nat Geo и Condé Nast Traveler.</li>
-    <li>Одна история: школа 1898 года стала библиотекой-отелем под Москвой. Фото уже уровня глянца.</li>
-  </ul>
-</div>
-
-<h2>Первые 30 дней</h2>
-<ul class="check">
-  <li><span class="who">Вы</span>Выгрузка загрузки и выручки по месяцам с июля 2025: номера, бистро, допуслуги, источники броней</li>
-  <li><span class="who">Вы</span>Доступы: Frontdesk24, Яндекс Бизнес, Tilda, Instagram, VK, домен</li>
-  <li><span class="who">Мы</span>Метрика, разметка, English page, страницы библиотеки, бистро, маршрутов и истории на сайте</li>
-  <li><span class="who">Мы</span>Яндекс Путешествия с льготой, Островок с выровненной ценой, Броневик, Ozon Travel, Авито, Google Business</li>
-  <li><span class="who">Мы</span>Telegram-канал: запуск, первые 20 постов из готового материала, перенос аудитории из Instagram</li>
-  <li><span class="who">Вместе</span>Тарифная сетка: будни, выходные, праздники, скидка за 3 / 5 / 7 ночей, тариф «три ночи без телефона»</li>
-  <li><span class="who">Вместе</span>Календарь событий на зиму и весну: что первое, с кем, когда</li>
-  <li><span class="who">Вы</span>Закрыты ли замечания первого месяца: дорожки, свет, мангалы, трава. Любая волна внимания принесёт волну проверок</li>
-</ul>
-
-<h2>Что считаем через 12 месяцев</h2>
-<div class="tablewrap"><table>
-<thead><tr><th>Метрика</th><th>Сейчас</th><th>Цель</th></tr></thead>
-<tbody>
-<tr><td>Загрузка</td><td>неизвестна, нужна от вас</td><td class="num">55–65% в среднем, 90% в выходные</td></tr>
-<tr><td>Средняя цена ночи</td><td class="num">8–16 тыс. ₽, один тариф</td><td class="num">+15% за счёт тарифов и пакетов</td></tr>
-<tr><td>Доля прямых броней</td><td>неизвестна</td><td class="num">50%+</td></tr>
-<tr><td>Отзывы на Яндекс Картах</td><td class="num">28 оценок, 3 за 2026</td><td class="num">150+, значок «Хорошее место»</td></tr>
-<tr><td>Подписчики Telegram</td><td class="num">0</td><td class="num">3 000</td></tr>
-<tr><td>События в календаре</td><td class="num">0</td><td class="num">18–24 в год</td></tr>
-<tr><td>Повторные гости</td><td>неизвестно</td><td class="num">30%</td></tr>
-<tr><td>Авторские публикации</td><td class="num">0</td><td class="num">10+</td></tr>
-</tbody></table></div>
-
-<h2>Что нужно от тебя</h2>
-<ol>
-  <li>Цифры за 14 месяцев. Без них всё выше остаётся гипотезой, а приоритеты могут поменяться.</li>
-  <li>Кто в команде за что отвечает: Андрей Вальдберг, Андрей Корешков, управляющий Дмитрий, кто пишет тексты, кто за бистро.</li>
-  <li>Бюджет на продвижение и готовность проводить события.</li>
-  <li>Отношение к продаже книг, партнёрствам с издательствами и к тому, чтобы отдать часть броней агрегаторам.</li>
-  <li>Что для тебя успех через год: загрузка, прибыль, узнаваемость, вторая очередь или продажа проекта.</li>
-</ol>
-
-<div class="callout"><p>Если коротко: у вас есть всё сырьё и нет ни одного из элементов, на которых живут аналоги. Это чинится. Первый контур ставится за месяц и ничего не ломает. Дальше разговор про события и партнёрства, а это ровно то, что вы умеете лучше всех.</p></div>
+<section id="ask">
+  <p class="eyebrow">Что нужно от тебя</p>
+  <h2>Пять ответов, без которых всё выше остаётся гипотезой</h2>
+  <div class="row">
+    <ol>
+      <li><strong>Цифры за 14 месяцев.</strong> Загрузка и выручка по месяцам, откуда приходят брони. Приоритеты могут поменяться.</li>
+      <li><strong>Кто за что отвечает.</strong> Андрей Вальдберг, Андрей Корешков, управляющий Дмитрий, кто пишет тексты, кто за бистро.</li>
+      <li><strong>Бюджет</strong> на продвижение и готовность проводить события.</li>
+      <li><strong>Границы.</strong> Продажа книг, партнёрства с издательствами, доля броней через агрегаторы.</li>
+      <li><strong>Что для тебя успех через год:</strong> загрузка, прибыль, узнаваемость, вторая очередь или продажа проекта.</li>
+    </ol>
+    <div class="callout" style="margin:0"><p>Если коротко: у вас есть всё сырьё и нет ни одного из элементов, на которых живут аналоги. Это чинится. Первый контур ставится за месяц и ничего не ломает. Дальше разговор про события и партнёрства, а это ровно то, что вы умеете лучше всех.</p></div>
+  </div>
+</section>
 
 <footer>
-  <p>Источники: dom1898.ru, Яндекс Карты (карточка 221871749746), Островок, 2ГИС, Zoon, Instagram @1898_dom, VK club231334531, ЕГРЮЛ по ООО «ДОИЧ 1898» (ИНН 6900021396), Tverlife 16.08.2025, АБН24 18.08.2025, Сноб 22.08.2025, frontdesk.ru 04.09.2026, profi.travel 02.04.2026, Коммерсантъ 12.07.2026 и 8690680, РГ 08.12.2025, tgstat и telega.in на 04.10.2026, сайты Веретьево, Болотов.Дачи, Переделкино, Gladstone's Library, Unplugged, Reading Retreat.</p>
-  <p>Не проверено: рейтинг на Яндекс Путешествиях и размещение на Авито (капча), полнота отчётности ООО за 2025 год.</p>
+  <p>Источники: dom1898.ru и движок брони Frontdesk24, Яндекс Карты (карточка 221871749746 и карточка бистро), Островок, 2ГИС, Zoon, Instagram @1898_dom, VK club231334531, ЕГРЮЛ по ООО «ДОИЧ 1898» (ИНН 6900021396), Tverlife 16.08.2025, АБН24 18.08.2025, Сноб 22.08.2025, frontdesk.ru 04.09.2026, profi.travel 02.04.2026, Коммерсантъ 12.07.2026, РГ 08.12.2025, tgstat и telega.in на 04.10.2026, сайты Веретьево, Болотов.Дачи, Переделкино, Gladstone's Library, Unplugged, Reading Retreat.</p>
+  <p>Не проверено: рейтинг на Яндекс Путешествиях и размещение на Авито (капча), полнота отчётности ООО за 2025 год. Расстояния на схеме примерные.</p>
   <span class="sign">Made by Dmitry Khinkis</span>
 </footer>
 
 </div>
+
+<script>
+(function(){
+  var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();};
+  var fontBody='"Source Sans 3","Helvetica Neue",Arial,sans-serif';
+  var charts=[];
+  function destroy(){charts.forEach(function(c){c.destroy();});charts=[];}
+  function build(){
+    if(!window.Chart) return;
+    destroy();
+    var fg=css('--fg'),fg2=css('--fg-2'),line=css('--line'),c1=css('--c1'),c2=css('--c2'),c3=css('--c3'),c4=css('--c4'),acc=css('--accent'),bg2=css('--bg-2');
+    Chart.defaults.font.family=fontBody;Chart.defaults.font.size=13;Chart.defaults.color=fg2;
+    var months=['июл 25','авг 25','сен 25','окт 25','ноя 25','дек 25','янв 26','фев 26','мар 26','апр 26','май 26','июн 26','июл 26','авг 26','сен 26','окт 26'];
+    var rev=[10,4,0,1,1,1,0,0,0,0,0,1,0,2,0,0];
+    var ig=[11,11,8,3,0,0,0,0,0,0,0,0,0,0,0,0];
+    var vk=[6,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    var pr=[0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    var el=document.getElementById('chActivity');
+    if(el){charts.push(new Chart(el,{type:'bar',data:{labels:months,datasets:[
+      {label:'Отзывы на Яндекс Картах',data:rev,backgroundColor:c1,stack:'a'},
+      {label:'Посты Instagram',data:ig,backgroundColor:c2,stack:'a'},
+      {label:'Посты VK',data:vk,backgroundColor:c3,stack:'a'},
+      {label:'Публикации в прессе',data:pr,backgroundColor:c4,stack:'a'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,usePointStyle:true}},tooltip:{backgroundColor:fg,titleColor:css('--bg'),bodyColor:css('--bg')}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkip:true,color:fg2}},y:{stacked:true,grid:{color:line},ticks:{color:fg2,precision:0},border:{display:false}}}}}));}
+    var tr=[['1898, Сынково',28],['Глэмпинг Карачарово',9],['Жуковка Village',277],['Edimonovo Village',637],['Конаково.Аэро',1085],['Долина ИВолга',2547],['Ямская слобода',3012],['Завидово УпДК',6747],['Konakovo River Club',9397],['Radisson Zavidovo',18956]].sort(function(a,b){return a[1]-b[1];});
+    el=document.getElementById('chTrust');
+    if(el){charts.push(new Chart(el,{type:'bar',data:{labels:tr.map(function(r){return r[0];}),datasets:[{data:tr.map(function(r){return r[1];}),backgroundColor:tr.map(function(r){return r[0].indexOf('1898')===0?c2:c1;}),borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:fg,titleColor:css('--bg'),bodyColor:css('--bg'),callbacks:{label:function(c){return c.parsed.x.toLocaleString('ru-RU')+' оценок';}}}},
+      scales:{x:{type:'logarithmic',min:5,max:30000,grid:{color:line},ticks:{color:fg2,callback:function(v){return [10,100,1000,10000].indexOf(v)>=0?v.toLocaleString('ru-RU'):'';}},border:{display:false}},y:{grid:{display:false},ticks:{color:fg,font:{weight:function(ctx){return tr[ctx.index]&&tr[ctx.index][0].indexOf('1898')===0?'700':'400';}}}}}}}));}
+    var pr2=[['Konakoff',5000],['Веточка',5500],['Озеро Ле, Дубна',5942],['Топорок',6881],['Жуковка Village',7000],['River Club, глэмпинг',7000],['1898, Сынково',8000],['Долина ИВолга',9700],['Шале Завидово Гольф',10000],['River Club, отель',10333],['Конаково.Аэро',10754],['Radisson Zavidovo',12581],['Edimonovo Village',14700],['Александровская слобода',15800],['Завидово УпДК',16000],['Глэмпинг Завидово',16900],['Вили Улей Волга',25500]];
+    el=document.getElementById('chPrice');
+    if(el){charts.push(new Chart(el,{type:'bar',data:{labels:pr2.map(function(r){return r[0];}),datasets:[{data:pr2.map(function(r){return r[1];}),backgroundColor:pr2.map(function(r){return r[0].indexOf('1898')===0?c2:(r[1]<8000?c3:c1);}),borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:fg,titleColor:css('--bg'),bodyColor:css('--bg'),callbacks:{label:function(c){return 'от '+c.parsed.x.toLocaleString('ru-RU')+' ₽ за ночь';}}}},
+      scales:{x:{grid:{color:line},ticks:{color:fg2,callback:function(v){return (v/1000)+' тыс.';}},border:{display:false}},y:{grid:{display:false},ticks:{color:fg,font:{weight:function(ctx){return pr2[ctx.index]&&pr2[ctx.index][0].indexOf('1898')===0?'700':'400';}}}}}}}));}
+  }
+  build();
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  if(mq.addEventListener) mq.addEventListener('change',build);
+  new MutationObserver(build).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  /* tabs */
+  document.querySelectorAll('[role=tablist]').forEach(function(list){
+    var btns=list.querySelectorAll('button[data-tab]');
+    btns.forEach(function(b){b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+      btns.forEach(function(x){var p=document.getElementById(x.dataset.tab);if(p)p.classList.toggle('on',x===b);});
+      charts.forEach(function(c){c.resize();});
+    });});
+  });
+  /* cards */
+  document.querySelectorAll('.card button').forEach(function(b){b.addEventListener('click',function(){var c=b.closest('.card');c.classList.toggle('open');b.textContent=c.classList.contains('open')?'свернуть':'подробнее';});});
+  /* calculator */
+  var occ=document.getElementById('occ'),adr=document.getElementById('adr');
+  var fmt=function(n){return Math.round(n).toLocaleString('ru-RU');};
+  var money=function(n){return n>=1e6?(n/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' млн ₽':fmt(n)+' ₽';};
+  function calc(){
+    var o=+occ.value/100,a=+adr.value,n=10*365*o,r=n*a,base=10*365*.05*a;
+    document.getElementById('occV').textContent=occ.value+'%';
+    document.getElementById('adrV').textContent=fmt(a)+' ₽';
+    document.getElementById('rev').textContent=money(r);
+    document.getElementById('nights').textContent=fmt(n);
+    document.getElementById('revM').textContent=money(r/12);
+    document.getElementById('delta').textContent=(r-base>=0?'+':'')+money(r-base);
+    document.getElementById('occBar').style.width=Math.min(100,o/0.6*100)+'%';
+  }
+  if(occ&&adr){occ.addEventListener('input',calc);adr.addEventListener('input',calc);calc();}
+  /* checklist */
+  var key='dom1898-30days';var state={};
+  try{state=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(e){state={};}
+  var items=document.querySelectorAll('#todo li');
+  function prog(){var d=0;items.forEach(function(li){if(li.querySelector('input').checked){d++;li.classList.add('done');}else li.classList.remove('done');});
+    document.getElementById('progT').textContent=d+' из '+items.length;document.getElementById('progBar').style.width=(d/items.length*100)+'%';}
+  items.forEach(function(li){var cb=li.querySelector('input');cb.checked=!!state[cb.id];cb.addEventListener('change',function(){state[cb.id]=cb.checked;try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}prog();});});
+  prog();
+  document.querySelectorAll('.filters button').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('.filters button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
+    items.forEach(function(li){li.classList.toggle('hide',b.dataset.f!=='all'&&li.dataset.w!==b.dataset.f);});
+  });});
+  /* nav highlight */
+  var links=document.querySelectorAll('nav.top a');var secs=[].map.call(links,function(a){return document.querySelector(a.getAttribute('href'));});
+  function spy(){var y=window.scrollY+90,cur=0;secs.forEach(function(s,i){if(s&&s.offsetTop<=y)cur=i;});links.forEach(function(a,i){a.classList.toggle('on',i===cur);});}
+  window.addEventListener('scroll',spy,{passive:true});spy();
+})();
+</script>
 </body>
 </html>
