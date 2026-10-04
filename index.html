@@ -132,7 +132,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .todo input{width:18px;height:18px;margin-top:3px;accent-color:var(--accent);flex:0 0 auto}
 .todo label{flex:1;cursor:pointer}
 .todo .who{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--bg-3);color:var(--fg-2);margin-right:8px;vertical-align:middle}
-.todo .who.vy{background:var(--flag-soft);color:var(--flag)}.todo .who.my{background:var(--accent-soft);color:var(--accent)}
+.todo .who.vy{background:var(--warn-soft);color:var(--warn)}.todo .who.my{background:var(--accent-soft);color:var(--accent)}
 .todo li.done label{color:var(--fg-2);text-decoration:line-through}
 .progress{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--fg-2)}
 .progress .bar{flex:1;margin:0}
@@ -452,19 +452,19 @@ footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-si
 
 <section id="days30">
   <p class="eyebrow">Первые 30 дней</p>
-  <h2>Что делаем мы, что делаете вы</h2>
-  <p class="sub">Отмечай сделанное, галочки сохраняются в этом браузере. Фильтр по исполнителю.</p>
-  <div class="filters"><button class="on" data-f="all">Все</button><button data-f="vy">Вы</button><button data-f="my">Мы</button><button data-f="vm">Вместе</button></div>
+  <h2>Что беру на себя, что только на твоей стороне</h2>
+  <p class="sub">Делаем вместе, но часть вещей могу попробовать только я, а часть доступна только тебе: твои доступы, твоя территория, твоя команда. Отмечай сделанное, галочки сохраняются в этом браузере.</p>
+  <div class="filters"><button class="on" data-f="all">Все</button><button data-f="my">Беру на себя</button><button data-f="vy">Твоя сторона</button><button data-f="vm">Вместе</button></div>
   <div class="progress"><span id="progT">0 из 12</span><div class="bar"><i id="progBar" style="width:0"></i></div></div>
   <ul class="todo" id="todo">
-    <li data-w="vy"><input type="checkbox" id="t1"><label for="t1"><span class="who vy">Вы</span>Закрыть замечания по территории: отсыпать дорожку, поставить уличный свет, наладить воду в бассейне, добавить мангалы</label></li>
-    <li data-w="vy"><input type="checkbox" id="t2"><label for="t2"><span class="who vy">Вы</span>Выгрузка загрузки и выручки по месяцам с июля 2025: номера, бистро, допуслуги, источники броней</label></li>
-    <li data-w="vy"><input type="checkbox" id="t3"><label for="t3"><span class="who vy">Вы</span>Доступы: Frontdesk24, Яндекс Бизнес, Tilda, Instagram, VK, домен</label></li>
-    <li data-w="my"><input type="checkbox" id="t4"><label for="t4"><span class="who my">Мы</span>Метрика с целями, разметка Schema.org, alt-тексты, страницы библиотеки, бистро, маршрутов и истории, английская страница</label></li>
-    <li data-w="my"><input type="checkbox" id="t5"><label for="t5"><span class="who my">Мы</span>Яндекс Путешествия с льготой, Островок с выровненной ценой, Броневик, Ozon Travel, Авито, Google Business</label></li>
-    <li data-w="my"><input type="checkbox" id="t6"><label for="t6"><span class="who my">Мы</span>Яндекс Карты: рубрика, карточка библиотеки, единый адрес, подъём карточки бистро</label></li>
-    <li data-w="my"><input type="checkbox" id="t7"><label for="t7"><span class="who my">Мы</span>Telegram-канал: запуск, первые 20 постов из готового материала, перенос аудитории из Instagram</label></li>
-    <li data-w="my"><input type="checkbox" id="t8"><label for="t8"><span class="who my">Мы</span>Ритуал отзывов: QR на выезде и в чеке, шаблон сообщения на следующий день</label></li>
+    <li data-w="vy"><input type="checkbox" id="t1"><label for="t1"><span class="who vy">Твоя сторона</span>Закрыть замечания по территории: отсыпать дорожку, поставить уличный свет, наладить воду в бассейне, добавить мангалы</label></li>
+    <li data-w="vy"><input type="checkbox" id="t2"><label for="t2"><span class="who vy">Твоя сторона</span>Выгрузка загрузки и выручки по месяцам с июля 2025: номера, бистро, допуслуги, источники броней</label></li>
+    <li data-w="vy"><input type="checkbox" id="t3"><label for="t3"><span class="who vy">Твоя сторона</span>Доступы: Frontdesk24, Яндекс Бизнес, Tilda, Instagram, VK, домен</label></li>
+    <li data-w="my"><input type="checkbox" id="t4"><label for="t4"><span class="who my">Беру на себя</span>Метрика с целями, разметка Schema.org, alt-тексты, страницы библиотеки, бистро, маршрутов и истории, английская страница</label></li>
+    <li data-w="my"><input type="checkbox" id="t5"><label for="t5"><span class="who my">Беру на себя</span>Яндекс Путешествия с льготой, Островок с выровненной ценой, Броневик, Ozon Travel, Авито, Google Business</label></li>
+    <li data-w="my"><input type="checkbox" id="t6"><label for="t6"><span class="who my">Беру на себя</span>Яндекс Карты: рубрика, карточка библиотеки, единый адрес, подъём карточки бистро</label></li>
+    <li data-w="my"><input type="checkbox" id="t7"><label for="t7"><span class="who my">Беру на себя</span>Telegram-канал: запуск, первые 20 постов из готового материала, перенос аудитории из Instagram</label></li>
+    <li data-w="my"><input type="checkbox" id="t8"><label for="t8"><span class="who my">Беру на себя</span>Ритуал отзывов: QR на выезде и в чеке, шаблон сообщения на следующий день</label></li>
     <li data-w="vm"><input type="checkbox" id="t9"><label for="t9"><span class="who">Вместе</span>Тарифная сетка: будни, выходные, праздники, скидка за 3 / 5 / 7 ночей, тариф «три ночи без телефона»</label></li>
     <li data-w="vm"><input type="checkbox" id="t10"><label for="t10"><span class="who">Вместе</span>Календарь событий на зиму и весну: что первое, с кем, когда</label></li>
     <li data-w="vm"><input type="checkbox" id="t11"><label for="t11"><span class="who">Вместе</span>Куратор библиотеки: кто, текст «почему эти книги», первые два издательства для полки</label></li>
